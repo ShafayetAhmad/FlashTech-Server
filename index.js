@@ -32,6 +32,7 @@ async function run() {
     // "users" collection in database
     const usersCollection = client.db("FlashTech").collection("users");
     const ProductsCollection = client.db("FlashTech").collection("products");
+    const BrandsCollection = client.db("FlashTech").collection("brands");
 
     // route to handle POST requests for adding a new user
     app.post("/addNewUser", async (req, res) => {
@@ -72,6 +73,12 @@ async function run() {
         // Respond with an error message
         res.status(500).json({ error: "Internal Server Error" });
       }
+    });
+
+    app.get("/getBrandsData", async (req, res) => {
+      const cursor = await BrandsCollection.find({}).toArray();
+      console.log(cursor);
+      res.send(cursor);
     });
 
     app.post("/getUserByEmail", async (req, res) => {
