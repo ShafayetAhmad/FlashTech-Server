@@ -60,7 +60,7 @@ async function run() {
 
       try {
         // Insert new user data into the MongoDB collection
-        const result = await usersCollection.insertOne(newProduct);
+        const result = await ProductsCollection.insertOne(newProduct);
 
         // Respond with a success message
         res.status(201).json({
