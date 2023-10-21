@@ -4,6 +4,7 @@ const app = express();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
+const ProductsData = require("./productsData");
 
 // middleware
 app.use(cors());
@@ -33,6 +34,9 @@ async function run() {
     const usersCollection = client.db("FlashTech").collection("users");
     const ProductsCollection = client.db("FlashTech").collection("products");
     const BrandsCollection = client.db("FlashTech").collection("brands");
+
+    // const result = await ProductsCollection.insertMany(ProductsData);
+    // console.log(`${result.insertedCount} products inserted successfully`);
 
     // route to handle POST requests for adding a new user
     app.post("/addNewUser", async (req, res) => {
@@ -80,6 +84,34 @@ async function run() {
       console.log(cursor);
       res.send(cursor);
     });
+    app.get("/getProductByBrand", async (req, res) => {
+      const brand = req.query.brand;
+      console.log(brand);
+      const cursor = await ProductsCollection.find({
+        BrandName: `${brand}`,
+      }).toArray();
+      console.log(cursor);
+      res.send(cursor);
+    });
+   const { ObjectId } = require("mongodb");
+
+   app.get("/getProductDetails", async (req, res) => {
+     const productId = req.query.id;
+     console.log(productId);
+
+     try {
+       const cursor = await ProductsCollection.findOne({
+         _id: new ObjectId(productId),
+       });
+
+       console.log(cursor);
+       res.send(cursor);
+     } catch (error) {
+       console.error("Error fetching product details:", error);
+       res.status(500).json({ error: "Internal Server Error" });
+     }
+   });
+
 
     app.post("/getUserByEmail", async (req, res) => {
       const email = req.body;
