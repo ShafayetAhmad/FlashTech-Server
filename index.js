@@ -25,26 +25,68 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server (optional starting in v4.7)
+    // Connect the client to the server
     await client.connect();
     console.log("Connected to MongoDB");
 
-    // Create a reference to the "users" collection in your database
+    // "users" collection in database
     const usersCollection = client.db("FlashTech").collection("users");
+    const ProductsCollection = client.db("FlashTech").collection("products");
 
-    // Define the route to handle POST requests for adding a new user
+    // route to handle POST requests for adding a new user
     app.post("/addNewUser", async (req, res) => {
       const newUser = req.body;
       console.log(newUser);
 
       try {
-        // Insert the new user data into the MongoDB collection
+        // Insert new user data into the MongoDB collection
         const result = await usersCollection.insertOne(newUser);
 
         // Respond with a success message
         res.status(201).json({
           message: "User added successfully",
           insertedId: result.insertedId,
+        });
+      } catch (error) {
+        console.error("Error adding user to MongoDB:", error);
+        // Respond with an error message
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
+    app.post("/addNewProduct", async (req, res) => {
+      const newProduct = req.body;
+      console.log(newProduct);
+
+      try {
+        // Insert new user data into the MongoDB collection
+        const result = await usersCollection.insertOne(newProduct);
+
+        // Respond with a success message
+        res.status(201).json({
+          message: "Product added successfully",
+          insertedId: result.insertedId,
+        });
+      } catch (error) {
+        console.error("Error adding Product to MongoDB:", error);
+        // Respond with an error message
+        res.status(500).json({ error: "Internal Server Error" });
+      }
+    });
+
+    app.post("/getUserByEmail", async (req, res) => {
+      const email = req.body;
+      console.log(email);
+
+      try {
+        // Insert new user data into the MongoDB collection
+        const query = { userEmail: email };
+        const result = await usersCollection.findOne(query);
+
+        // Respond with a success message
+        res.status(201).json({
+          message: "User added successfully",
+          user: result,
         });
       } catch (error) {
         console.error("Error adding user to MongoDB:", error);
