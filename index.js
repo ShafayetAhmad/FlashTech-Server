@@ -117,6 +117,44 @@ async function run() {
       }
     });
 
+    app.put("/deleteCardData", async (req, res) => {
+      console.log(req.body);
+      const { userEmail, productId } = req.body;
+      console.log("line 84", userEmail, productId);
+      try {
+        // Insert new user data into the MongoDB collection
+        const user = await usersCollection.findOne({
+          userEmail: userEmail,
+        });
+
+        const result = await usersCollection.updateOne(
+          { userEmail: userEmail },
+          {
+            $pull: {
+              userCart: { _id: productId },
+            },
+          }
+        );
+
+        if (result.modifiedCount === 1) {
+          console.log("Product deleted successfully");
+          res.json({
+            success: true,
+            message: "Product deleted successfully",
+          });
+        } else {
+          res
+            .status(500)
+            .json({ success: false, message: "Internal server error" });
+        }
+      } catch (error) {
+        console.error("Error updating user cart:", error);
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
+      }
+    });
+
     app.get("/getBrandsData", async (req, res) => {
       const cursor = await BrandsCollection.find({}).toArray();
       res.send(cursor);
