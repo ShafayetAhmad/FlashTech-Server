@@ -15,7 +15,6 @@ const db_pass = process.env.DB_PASS;
 
 const uri = `mongodb+srv://${db_user}:${db_pass}@cluster0.tv2lcpe.mongodb.net/?retryWrites=true&w=majority`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -26,19 +25,18 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server
     await client.connect();
     console.log("Connected to MongoDB");
 
-    // "users" collection in database
     const usersCollection = client.db("FlashTech").collection("users");
     const ProductsCollection = client.db("FlashTech").collection("products");
     const BrandsCollection = client.db("FlashTech").collection("brands");
 
+    // mongodb query to insert mulitple product data from json directly to mongodb in one operation
     // const result = await ProductsCollection.insertMany(ProductsData);
     // console.log(`${result.insertedCount} products inserted successfully`);
 
-    // route to handle POST requests for adding a new user
+    // route to handle POST requests for new user registration
     app.post("/addNewUser", async (req, res) => {
       const newUser = req.body;
       console.log(newUser);
@@ -57,6 +55,7 @@ async function run() {
       }
     });
 
+    // route to handle adding new product with details
     app.post("/addNewProduct", async (req, res) => {
       const newProduct = req.body;
       console.log(newProduct);
@@ -75,12 +74,44 @@ async function run() {
       }
     });
 
+    // route to handle update product from proudct details page
+    app.put("/updateProduct", async (req, res) => {
+      console.log("hit updated product api");
+      console.log(req.body);
+      const { productId, updatedProduct } = req.body;
+      try {
+        const product = await ProductsCollection.findOne({
+          _id: new ObjectId(productId),
+        });
+        console.log("product to update", product);
+
+        for (const key in updatedProduct) {
+          await ProductsCollection.updateOne(
+            { _id: product._id },
+            { $set: { [key]: updatedProduct[key] } }
+          );
+          console.log(
+            `Updated ${key} in document with _id ${productId}to ${updatedProduct[key]}`
+          );
+        }
+        const seeUpdatedProduct = await ProductsCollection.findOne({
+          _id: new ObjectId(productId),
+        });
+        console.log("product updated: ", seeUpdatedProduct);
+      } catch (error) {
+        console.error("Error updating user cart:", error);
+        res
+          .status(500)
+          .json({ success: false, message: "Internal server error" });
+      }
+    });
+
+    // route to insert new product into the card in users collection
     app.put("/updateUserCart", async (req, res) => {
       console.log(req.body);
       const { userEmail, currentProduct } = req.body;
       console.log("line 84", userEmail, currentProduct);
       try {
-        // Insert new user data into the MongoDB collection
         const user = await usersCollection.findOne({
           userEmail: userEmail,
         });
@@ -117,12 +148,12 @@ async function run() {
       }
     });
 
+    // route to remove product from user profile
     app.put("/deleteCardData", async (req, res) => {
       console.log(req.body);
       const { userEmail, productId } = req.body;
       console.log("line 84", userEmail, productId);
       try {
-        // Insert new user data into the MongoDB collection
         const user = await usersCollection.findOne({
           userEmail: userEmail,
         });
@@ -155,11 +186,13 @@ async function run() {
       }
     });
 
+    // route to get all brands data
     app.get("/getBrandsData", async (req, res) => {
       const cursor = await BrandsCollection.find({}).toArray();
       res.send(cursor);
     });
 
+    // route to get cart data from the database
     app.get("/getCartData", async (req, res) => {
       try {
         const userEmail = req.query.userEmail;
@@ -173,6 +206,7 @@ async function run() {
       }
     });
 
+    // route to get product list with data filtered by brand
     app.get("/getProductByBrand", async (req, res) => {
       const brand = req.query.brand;
       const cursor = await ProductsCollection.find({
@@ -181,6 +215,16 @@ async function run() {
       res.send(cursor);
     });
 
+    // route to get featured proudct
+    app.get("/getFeaturedProducts", async (req, res) => {
+      const cursor = await ProductsCollection.find({
+        Featured: "true",
+      }).toArray();
+      console.log("featured products", cursor);
+      res.send(cursor);
+    });
+
+    // route to get proudct details on the product details page
     app.get("/getProductDetails", async (req, res) => {
       const productId = req.query.id;
 
@@ -196,6 +240,7 @@ async function run() {
       }
     });
 
+    // route to get user details
     app.get("/getUserDetails", async (req, res) => {
       const userMail = req.query.userEmail;
       console.log(userMail);
@@ -213,28 +258,26 @@ async function run() {
       }
     });
 
+    // route to get userdetails by email
     app.post("/getUserByEmail", async (req, res) => {
       const email = req.body;
       console.log(email);
 
       try {
-        // Insert new user data into the MongoDB collection
         const query = { userEmail: email };
         const result = await usersCollection.findOne(query);
 
-        // Respond with a success message
         res.status(201).json({
           message: "User added successfully",
           user: result,
         });
       } catch (error) {
         console.error("Error adding user to MongoDB:", error);
-        // Respond with an error message
+
         res.status(500).json({ error: "Internal Server Error" });
       }
     });
 
-    // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
